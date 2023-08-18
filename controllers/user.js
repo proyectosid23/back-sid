@@ -2,7 +2,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const bcryptjs = require('bcryptjs')
 const accountVerificationEmail = require('./accountVerificationEmail');
-const { userSignedUpResponse, userNotFoundResponse, invalidCredentialsResponse, userSignedOutResponse } = require('../config/responses');
+const { userSignedUpResponse, userNotFoundResponse, invalidCredentialsResponse, userSignedOutResponse, codReferidoNotValid } = require('../config/responses');
 const jwt = require('jsonwebtoken')
 
 
@@ -22,6 +22,9 @@ const controller = {
         try {
             await User.create({ role, email, password, name, lastName, codReferido, codReferir, code, verified, logged, saldoActual, planes })
             const refUser = await User.findOne({codReferir: codReferido})
+            if (!refUser){
+                return codReferidoNotValid(req, res)
+            }
             refUser.referidos.push(code)
             refUser.save()
             await accountVerificationEmail(email, code)

@@ -61,6 +61,13 @@ function activityNotFound(req, res) {
     });
 }
 
+function codReferidoNotValid(req, res) {
+    return res.status(404).json({
+        success: false,
+        message: 'El código de referido no es válido'
+    })
+}
+
 module.exports = {
     userSignedUpResponse,
     userExistsResponse,
@@ -70,5 +77,6 @@ module.exports = {
     invalidCredentialsResponse,
     verifyResponse,
     mustBeTheOwner,
-    activityNotFound
+    activityNotFound,
+    codReferidoNotValid
 }
