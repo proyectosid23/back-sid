@@ -2,7 +2,7 @@ const User = require("../models/User");
 const { codReferidoNotValid } = require("../config/responses");
 
 async function codReferidoNotValidMid(req, res, next) {
-    const user = await User.findOne({codReferido: req.body.codReferir})
+    const user = await User.findOne({codReferir: req.body.codReferido})
     if (user) {
         req.user = {
             id: user._id,
