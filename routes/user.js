@@ -6,10 +6,11 @@ const validator = require('../middlewares/validator');
 const accountExistsSignUp = require('../middlewares/accountExistsSignUp')
 const accountExistsSignIn = require('../middlewares/accountExistsSignIn')
 const accountHasBeenVerified = require('../middlewares/accountHasBeenVerified')
+const codReferidoNotValidMid = require('../middlewares/codReferidoNotValidMid')
 const mustSignIn = require('../middlewares/mustSignIn')
 const { register, verify, login, loginWithToken, logout, readOne, update, read } = require('../controllers/user');
 
-router.post('/sign-up',validator(schema),accountExistsSignUp, register);
+router.post('/sign-up',validator(schema),accountExistsSignUp, codReferidoNotValidMid, register);
 router.post('/sign-in', validator(schemaSignin), accountExistsSignIn, accountHasBeenVerified, login)
 router.post('/sign-out', passport.authenticate('jwt', { session: false }), logout)
 router.get('/', read )

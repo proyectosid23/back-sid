@@ -20,16 +20,12 @@ const controller = {
         password = bcryptjs.hashSync(password, 10);
 
         try {
+
             await User.create({ role, email, password, name, lastName, codReferido, codReferir, code, verified, logged, saldoActual, planes })
             const refUser = await User.findOne({codReferir: codReferido})
-            // if (!refUser){
-            //     return codReferidoNotValid(req, res)
-            // } else {
-            // refUser.referidos.push(code)
-            // refUser.save()
             await accountVerificationEmail(email, code)
             return userSignedUpResponse(req, res)
-        // }
+            
         } catch (error) {
             next(error)
         }
