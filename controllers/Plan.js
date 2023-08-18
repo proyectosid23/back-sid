@@ -43,17 +43,6 @@ const controller = {
 
     getAll: async (req, res) => {
 
-        const { role } = req.user
-
-        if (role !== "admin") {
-            return res.status(200).json({
-                success: false,
-                response: null,
-                message: "No tienes permisos para ver los planes"
-            })
-
-        }
-
         try {
 
             const planes = await Plan.find()
