@@ -21,9 +21,9 @@ const controller = {
 
         try {
             await User.create({ role, email, password, name, lastName, codReferido, codReferir, code, verified, logged, saldoActual, planes })
-            // const refUser = await User.findOne({codReferir: codReferido})
-            // refUser.referidos.push(code)
-            // refUser.save()
+            const refUser = await User.findOne({codReferir: codReferido})
+            refUser.referidos.push(code)
+            refUser.save()
             await accountVerificationEmail(email, code)
             return userSignedUpResponse(req, res)
         } catch (error) {
