@@ -77,7 +77,7 @@ const controller = {
                       );
 
                     const primerReferido = await User.findOne({ codReferir: user.codReferido });
-
+                    console.log(primerReferido)
                     if (primerReferido) {
                         let planNoCompletadoEncontrado = false;
                         for (let i = 0; i < primerReferido.planes.length; i++) {
@@ -139,7 +139,7 @@ const controller = {
                         }
                     }
 
-                    const segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido });
+                    const segundoReferido = await User.findOne({ codReferir: primerReferido?.codReferido });
 
                     if (segundoReferido) {
                         let planNoCompletadoEncontrado = false
