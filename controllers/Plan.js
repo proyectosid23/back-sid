@@ -19,7 +19,7 @@ const controller = {
             const newPlan = await Plan.create({
                 name,
                 direccion,
-                userModificate: id,
+                userModificate: req.user._id,
                 gananciaDiaria,
                 ganancia25dias,
                 ganancia50dias,

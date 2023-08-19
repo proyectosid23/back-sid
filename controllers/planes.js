@@ -6,7 +6,6 @@ const controller = {
     buy: async (req, res, next) => {
         try {
             const { plan, image } = req.body;
-            console.log(plan)
             const { id, name, lastName, email } = req.user;
             const fechaInicio = new Date();
             const fechaFin = new Date();
@@ -68,30 +67,29 @@ const controller = {
                     const hola = await User.findOneAndUpdate(
                         { _id: userId, 'planes._id': plan._id },
                         {
-                          $set: {
-                            'planes.$.estado': 'activo',
-                            'planes.$.idAdmin': id
-                          }
+                            $set: {
+                                'planes.$.estado': 'activo',
+                                'planes.$.idAdmin': id
+                            }
                         },
                         { new: true }
-                      );
+                    );
 
                     const primerReferido = await User.findOne({ codReferir: user.codReferido });
-                    console.log(primerReferido)
+
                     if (primerReferido) {
                         let planNoCompletadoEncontrado = false;
                         for (let i = 0; i < primerReferido.planes.length; i++) {
-                            const plan = primerReferido.planes[i];
+                            const plan1r = primerReferido.planes[i];
                             if (planNoCompletadoEncontrado) break;
                             if (!plan.completo) {
-                                let nuevoAcumulado = plan.acumulado + (10 * plan.monto) / 100;
-                                let porcentajeDiario = (4 * plan.monto) / 100;
+                                let nuevoAcumulado = plan1r.acumulado + (10 * plan.monto) / 100;
                                 let calculoMontoTotal = plan.montoTotal - nuevoAcumulado;
-                                let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
+                                let calculoDias = Math.ceil(calculoMontoTotal / plan1r.porcentajeDiario);
                                 const futureDate = new Date();
                                 futureDate.setDate(futureDate.getDate() + calculoDias);
                                 await User.findOneAndUpdate(
-                                    { _id: primerReferido._id, 'planes._id': plan._id },
+                                    { _id: primerReferido._id, 'planes._id': plan1r._id },
                                     {
                                         $set: {
                                             'planes.$.fechaFin': futureDate,
@@ -100,6 +98,7 @@ const controller = {
                                     },
                                     { new: true }
                                 );
+
                                 if (nuevoAcumulado >= plan.montoTotal) {
                                     let acumuladoRestante = nuevoAcumulado - plan.montoTotal;
                                     await User.findOneAndUpdate(
@@ -134,12 +133,23 @@ const controller = {
                                         }
                                     }
                                 }
+
+                                const updateSaldoActualPrimerReferido = await User.findOneAndUpdate(
+                                    { _id: primerReferido._id },
+                                    {
+                                        $set: {
+                                            saldoActual: primerReferido.saldoActual + (10 * plan.monto) / 100,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+
                                 planNoCompletadoEncontrado = true;
                             }
                         }
                     }
 
-                    const segundoReferido = await User.findOne({ codReferir: primerReferido?.codReferido });
+                    const segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido });
 
                     if (segundoReferido) {
                         let planNoCompletadoEncontrado = false
@@ -147,7 +157,7 @@ const controller = {
                             const planDos = segundoReferido.planes[i];
                             if (planNoCompletadoEncontrado) break;
                             if (!planDos.completo) {
-                                let nuevoAcumulado = planDos.acumulado + (5 * planDos.monto) / 100;
+                                let nuevoAcumulado = planDos.acumulado + (5 * plan.monto) / 100;
                                 let porcentajeDiario = (4 * planDos.monto) / 100;
                                 let calculoMontoTotal = planDos.montoTotal - nuevoAcumulado;
                                 let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
@@ -198,6 +208,16 @@ const controller = {
                                         }
                                     }
                                 }
+                                const updateSaldoActualSegundoReferido = await User.findOneAndUpdate(
+                                    { _id: segundoReferido._id },
+                                    {
+                                        $set: {
+                                            saldoActual: segundoReferido.saldoActual + (5 * plan.monto) / 100,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+
                                 planNoCompletadoEncontrado = true;
                             }
                         }
@@ -277,7 +297,7 @@ const controller = {
             if (role === 'admin') {
                 const usuarios = await User.find({ 'planes.idAdmin': id });
                 let planesActivados = [];
-                if(usuarios){
+                if (usuarios) {
                     for (const usuario of usuarios) {
                         for (const plan of usuario.planes) {
                             if (plan.idAdmin.equals(id)) {
@@ -286,13 +306,13 @@ const controller = {
                         }
                     }
 
-                    if(planesActivados.length > 0){
+                    if (planesActivados.length > 0) {
                         return res.status(200).json({
                             success: true,
                             message: 'Planes encontrados',
                             response: planesActivados
                         });
-                    }else{
+                    } else {
                         return res.status(200).json({
                             success: false,
                             message: 'No se encontraron planes',
