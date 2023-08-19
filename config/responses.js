@@ -15,7 +15,7 @@ function userSignedUpResponse(req, res) {
 function userSignedOutResponse(req, res) {
     return res.status(201).json({
         success: true,
-        message: 'user signed out'
+        message: '¡Vuelve pronto!'
     })
 }
 

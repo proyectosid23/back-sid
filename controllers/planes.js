@@ -33,7 +33,6 @@ const controller = {
                 completo: false,
             });
 
-            console.log(newPlan)
             const user = await User.findById(id);
             if (user) {
                 user.planes.push(newPlan);
@@ -66,7 +65,7 @@ const controller = {
                 const plan = user.planes.find(plan => plan._id == idPlan);
                 if (plan) {
 
-                    const hola = await User.findOneAndUpdate(
+                    await User.findOneAndUpdate(
                         { _id: userId, 'planes._id': plan._id },
                         {
                             $set: {
@@ -84,7 +83,7 @@ const controller = {
                         for (let i = 0; i < primerReferido.planes.length; i++) {
                             const plan1r = primerReferido.planes[i];
                             if (planNoCompletadoEncontrado) break;
-                            if (!plan.completo) {
+                            if (!plan1r.completo && plan1r.estado === 'activo') {
                                 let nuevoAcumulado = plan1r.acumulado + (10 * plan.monto) / 100;
                                 let calculoMontoTotal = plan.montoTotal - nuevoAcumulado;
                                 let calculoDias = Math.ceil(calculoMontoTotal / plan1r.porcentajeDiario);
@@ -100,26 +99,24 @@ const controller = {
                                     },
                                     { new: true }
                                 );
-
-                                if (nuevoAcumulado >= plan.montoTotal) {
-                                    let acumuladoRestante = nuevoAcumulado - plan.montoTotal;
+                                if (nuevoAcumulado >= plan1r.montoTotal) {
+                                    let acumuladoRestante = nuevoAcumulado - plan1r.montoTotal;
                                     await User.findOneAndUpdate(
-                                        { _id: primerReferido._id, 'planes._id': plan._id },
+                                        { _id: primerReferido._id, 'planes._id': plan1r._id },
                                         {
                                             $set: {
                                                 'planes.$.completo': true,
-                                                'planes.$.acumulado': plan.montoTotal,
+                                                'planes.$.acumulado': plan1r.montoTotal,
                                             },
                                         },
                                         { new: true }
                                     );
                                     for (let j = 0; j < primerReferido.planes.length; j++) {
                                         const plansito = primerReferido.planes[j];
-                                        if (!plansito.completo) {
+                                        if (!plansito.completo && plansito.estado === 'activo') {
                                             let nuevoAcumulado = plansito.acumulado + acumuladoRestante;
-                                            let porcentajeDiario = (4 * plansito.monto) / 100;
                                             let calculoMontoTotal = plansito.montoTotal - nuevoAcumulado;
-                                            let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
+                                            let calculoDias = Math.ceil(calculoMontoTotal / plansito.porcentajeDiario);
                                             const futureDate = new Date();
                                             futureDate.setDate(futureDate.getDate() + calculoDias);
                                             await User.findOneAndUpdate(
@@ -136,7 +133,7 @@ const controller = {
                                     }
                                 }
 
-                                const updateSaldoActualPrimerReferido = await User.findOneAndUpdate(
+                                await User.findOneAndUpdate(
                                     { _id: primerReferido._id },
                                     {
                                         $set: {
@@ -151,14 +148,13 @@ const controller = {
                         }
                     }
 
-                    const segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido });
-
+                    let segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido });
                     if (segundoReferido) {
                         let planNoCompletadoEncontrado = false
                         for (let i = 0; i < segundoReferido.planes.length; i++) {
                             const planDos = segundoReferido.planes[i];
                             if (planNoCompletadoEncontrado) break;
-                            if (!planDos.completo) {
+                            if (!planDos.completo && planDos.estado === 'activo') {
                                 let nuevoAcumulado = planDos.acumulado + (5 * plan.monto) / 100;
                                 let porcentajeDiario = (4 * planDos.monto) / 100;
                                 let calculoMontoTotal = planDos.montoTotal - nuevoAcumulado;
@@ -188,29 +184,33 @@ const controller = {
                                         { new: true }
                                     );
 
+                                    segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido }).lean();
+
                                     for (let j = 0; j < segundoReferido.planes.length; j++) {
                                         const plansitoDos = segundoReferido.planes[j];
-                                        if (!plansitoDos.completo) {
-                                            let nuevoAcumulado = plansitoDos.acumulado + acumuladoRestante;
-                                            let porcentajeDiario = (4 * plansitoDos.monto) / 100;
-                                            let calculoMontoTotal = plansitoDos.montoTotal - nuevoAcumulado;
-                                            let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
-                                            const futureDate = new Date();
-                                            futureDate.setDate(futureDate.getDate() + calculoDias);
+                                        if (!plansitoDos.completo && plansitoDos.estado === 'activo') {
+                                            console.log(plansitoDos)
+                                            let nuevoAcumuladoo = plansitoDos.acumulado + acumuladoRestante;
+                                            let calculoMontoTotall = plansitoDos.montoTotal - nuevoAcumulado;
+                                            let calculoDiass = Math.ceil(calculoMontoTotall / plansitoDos.porcentajeDiario);
+                                            const futureDatee = new Date();
+                                            futureDate.setDate(futureDate.getDate() + calculoDiass);
                                             await User.findOneAndUpdate(
                                                 { _id: segundoReferido._id, 'planes._id': plansitoDos._id },
                                                 {
                                                     $set: {
-                                                        'planes.$.fechaFin': futureDate,
-                                                        'planes.$.acumulado': nuevoAcumulado,
+                                                        'planes.$.fechaFin': futureDatee,
+                                                        'planes.$.acumulado': nuevoAcumuladoo,
                                                     },
                                                 },
                                                 { new: true }
                                             );
+                                            break
                                         }
+                                        
                                     }
                                 }
-                                const updateSaldoActualSegundoReferido = await User.findOneAndUpdate(
+                                await User.findOneAndUpdate(
                                     { _id: segundoReferido._id },
                                     {
                                         $set: {
@@ -219,7 +219,6 @@ const controller = {
                                     },
                                     { new: true }
                                 );
-
                                 planNoCompletadoEncontrado = true;
                             }
                         }
