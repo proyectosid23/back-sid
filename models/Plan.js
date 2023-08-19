@@ -9,6 +9,10 @@ const schema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    red: {
+        type: String,
+        required: true,
+    },
     userModificate: { 
         type: mongoose.Types.ObjectId, 
         ref: 'users', 

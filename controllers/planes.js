@@ -5,7 +5,7 @@ const controller = {
 
     buy: async (req, res, next) => {
         try {
-            const { plan, image } = req.body;
+            const { plan, image, TxId } = req.body;
             const { id, name, lastName, email } = req.user;
             const fechaInicio = new Date();
             const fechaFin = new Date();
@@ -15,6 +15,7 @@ const controller = {
             const newPlan = new Planes({
                 plan: plan.name,
                 estado,
+                TxId,
                 capturaDePago: image,
                 fechaInicio,
                 fechaFin,
@@ -32,6 +33,7 @@ const controller = {
                 completo: false,
             });
 
+            console.log(newPlan)
             const user = await User.findById(id);
             if (user) {
                 user.planes.push(newPlan);
@@ -339,6 +341,53 @@ const controller = {
             return res.status(500).json({
                 success: false,
                 message: 'Error en el servidor',
+                response: null
+            });
+        }
+    },
+
+    rechazarPlan: async (req, res, next) => {
+        const { id, role } = req.user;
+        const { idPlan } = req.params;
+        const { userId } = req.body;
+        if (role === 'admin') {
+            const user = await User.findById(userId);
+            if (user) {
+                const plan = user.planes.find(plan => plan._id == idPlan);
+                if (plan) {
+                    const updatePlan = await User.findOneAndUpdate(
+                        { _id: userId, 'planes._id': plan._id },
+                        {
+                            $set: {
+                                'planes.$.estado': 'rechazado',
+                                'planes.$.idAdmin': id
+                            }
+                        },
+                        { new: true }
+                    );
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Plan rechazado con exito',
+                        data: plan
+                    })
+                } else {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No se pudo rechazar el plan',
+                        data: null
+                    })
+                }
+            } else {
+                res.status(400).json(
+                    success = false,
+                    message = 'No se encontro el usuario',
+                    data = null
+                )
+            }
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: 'No tienes permisos para realizar esta acción',
                 response: null
             });
         }

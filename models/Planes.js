@@ -6,6 +6,7 @@ const schema = new mongoose.Schema({
     capturaDePago: { type: String, required: true },
     fechaInicio: { type: Date, required: true },
     fechaFin: { type: Date, required: true },
+    TxId: { type: String, required: true },
     monto: { type: Number, required: true },
     montoTotal: { type: Number, required: true },
     porcentajeDiario: { type: Number, required: true },

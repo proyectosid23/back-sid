@@ -5,7 +5,7 @@ const controller = {
 
     crear: async (req, res, next) => {
         const { id, saldoActual } = req.user
-        const { monto, direccion, red } = req.body
+        const { monto, direccion, red, TxId } = req.body
 
         if (monto > saldoActual) {
             return res.status(200).json({
@@ -27,6 +27,7 @@ const controller = {
                 fecha: new Date(),
                 idUser: id,
                 direccion,
+                TxId,
                 red,
                 estado: 'Pendiente',
                 fechaAprobacion: null,

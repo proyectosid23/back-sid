@@ -68,6 +68,12 @@ function codReferidoNotValid(req, res) {
     })
 }
 
+function tieneRetiroPendiente(req, res) {
+    return res.status(404).json({
+        success: false,
+        message: 'No puedes realizar un retiro mientras tengas uno pendiente'
+    })
+}
 module.exports = {
     userSignedUpResponse,
     userExistsResponse,
@@ -78,5 +84,6 @@ module.exports = {
     verifyResponse,
     mustBeTheOwner,
     activityNotFound,
-    codReferidoNotValid
+    codReferidoNotValid,
+    tieneRetiroPendiente
 }

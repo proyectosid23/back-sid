@@ -15,11 +15,12 @@ const controller = {
         }
 
         try {
-            const { name, direccion, gananciaDiaria, ganancia25dias, ganancia50dias, ganancia75dias, gananciaTotal } = req.body
+            const { name, direccion, red, gananciaDiaria, ganancia25dias, ganancia50dias, ganancia75dias, gananciaTotal } = req.body
             const newPlan = await Plan.create({
                 name,
+                red,
                 direccion,
-                userModificate: req.user._id,
+                userModificate: id,
                 gananciaDiaria,
                 ganancia25dias,
                 ganancia50dias,
