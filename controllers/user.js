@@ -110,6 +110,8 @@ const controller = {
     },
 
     readOne: async (req, res, next) => {
+        let date = new Date();
+        console.log(date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds() + ' - ' + date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear())
         let id = req.params.id;
         try {
             let user = await User.findById({ _id: id })
