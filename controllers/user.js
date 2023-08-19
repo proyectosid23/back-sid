@@ -1,207 +1,346 @@
+const Planes = require('../models/Planes');
 const User = require('../models/User');
-const crypto = require('crypto');
-const bcryptjs = require('bcryptjs')
-const accountVerificationEmail = require('./accountVerificationEmail');
-const { userSignedUpResponse, userNotFoundResponse, invalidCredentialsResponse, userSignedOutResponse, codReferidoNotValid } = require('../config/responses');
-const jwt = require('jsonwebtoken')
-
 
 const controller = {
 
-    register: async (req, res, next) => {
-        let { email, password, name, lastName, codReferido } = req.body;
-        let role = 'user';
-        let verified = false
-        let logged = false
-        let code = crypto.randomBytes(10).toString('hex');
-        let codReferir = crypto.randomBytes(5).toString('hex');
-        let saldoActual = 0;
-        let planes = [];
-        password = bcryptjs.hashSync(password, 10);
-
+    buy: async (req, res, next) => {
         try {
+            const { plan, image } = req.body;
+            const { id, name, lastName, email } = req.user;
+            const fechaInicio = new Date();
+            const fechaFin = new Date();
+            const acumulado = 0;
+            const estado = 'pendiente';
+            fechaFin.setDate(fechaInicio.getDate() + 75);
+            const newPlan = new Planes({
+                plan: plan.name,
+                estado,
+                capturaDePago: image,
+                fechaInicio,
+                fechaFin,
+                monto: plan.ganancia25dias,
+                montoTotal: plan.gananciaTotal,
+                porcentajeDiario: plan.gananciaDiaria,
+                acumulado,
+                userBuy: {
+                    id,
+                    name,
+                    lastName,
+                    email
+                },
+                idAdmin: null,
+                completo: false,
+            });
 
-            await User.create({ role, email, password, name, lastName, codReferido, codReferir, code, verified, logged, saldoActual, planes })
-            const refUser = await User.findOne({codReferir: codReferido})
-            refUser.referidos.push(code)
-            refUser.save()
-            await accountVerificationEmail(email, code)
-            return userSignedUpResponse(req, res)
-
-        } catch (error) {
-            next(error)
-        }
-    },
-            
-    verify: async (req, res, next) => {
-        const { code } = req.params;
-
-        try {
-            let user = await User.findOneAndUpdate({ code: code }, { verified: true }, { new: true })
+            const user = await User.findById(id);
             if (user) {
-                return res.redirect('https://www.google.com')
-            }
-            return userNotFoundResponse(req, res)
-
-        } catch (error) {
-            next(error)
-        }
-    },
-
-    login: async (req, res, next) => {
-        let { password } = req.body;
-        let { user } = req;
-        try {
-            const verifyPassword = bcryptjs.compareSync(password, user.password)
-            if (verifyPassword) {
-                const userDb = await User.findOneAndUpdate({ _id: user.id }, { logged: true }, { new: true })
-                let token = jwt.sign(
-                    {
-                        id: userDb._id,
-                        role: userDb.role,
-                        email: userDb.email,
-                        name: userDb.name,
-                        logged: userDb.logged,
-                        planes: userDb.planes,
-                    },
-                    process.env.KEY_JWT,
-                    { expiresIn: 60 * 60 * 24 }
+                user.planes.push(newPlan);
+                await user.save();
+                res.status(200).json(
+                    success = true,
+                    message = 'Plan comprado con exito',
+                    data = newPlan
                 )
-
-                return res.status(200).json({
-                    response: { user, token },
-                    success: true,
-                    message: `Hello ${userDb.name}, welcome!`
-                })
+            } else {
+                res.status(400).json(
+                    success = false,
+                    message = 'No se pudo comprar el plan',
+                    data = null
+                )
             }
-            return invalidCredentialsResponse(req, res)
+
         } catch (error) {
-            next(error)
+            console.log(error);
         }
     },
 
-    loginWithToken: async (req, res, next) => {
-
-        let { user } = req;
+    activarPlan: async (req, res, next) => {
         try {
-            return res.json({
-                response: { user },
-                success: true,
-                message: `Welcome ${user.name}`
-            })
-
-        } catch (error) {
-            next(error)
-        }
-    },
-
-    logout: async (req, res, next) => {
-        const { id } = req.user;
-
-        try {
-            let user = await User.findOneAndUpdate(
-                { _id: id },
-                { logged: false },
-                { new: true }
-            );
-
-            return userSignedOutResponse(req, res);
-        } catch (error) {
-            next(error);
-        }
-    },
-
-    readOne: async (req, res, next) => {
-        let id = req.params.id;
-        try {
-            let user = await User.findById({ _id: id })
+            const { id } = req.user;
+            const { idPlan } = req.params;
+            const { userId } = req.body;
+            const user = await User.findById(userId);
             if (user) {
-                res.status(200).json({
-                    success: true,
-                    message: 'the user was found successfully!.',
-                    data: user,
-                })
+                const plan = user.planes.find(plan => plan._id == idPlan);
+                if (plan) {
+
+                    const hola = await User.findOneAndUpdate(
+                        { _id: userId, 'planes._id': plan._id },
+                        {
+                            $set: {
+                                'planes.$.estado': 'activo',
+                                'planes.$.idAdmin': id
+                            }
+                        },
+                        { new: true }
+                    );
+
+                    const primerReferido = await User.findOne({ codReferir: user.codReferido });
+
+                    if (primerReferido) {
+                        let planNoCompletadoEncontrado = false;
+                        for (let i = 0; i < primerReferido.planes.length; i++) {
+                            const plan1r = primerReferido.planes[i];
+                            if (planNoCompletadoEncontrado) break;
+                            if (!plan.completo) {
+                                let nuevoAcumulado = plan1r.acumulado + (10 * plan.monto) / 100;
+                                let calculoMontoTotal = plan.montoTotal - nuevoAcumulado;
+                                let calculoDias = Math.ceil(calculoMontoTotal / plan1r.porcentajeDiario);
+                                const futureDate = new Date();
+                                futureDate.setDate(futureDate.getDate() + calculoDias);
+                                await User.findOneAndUpdate(
+                                    { _id: primerReferido._id, 'planes._id': plan1r._id },
+                                    {
+                                        $set: {
+                                            'planes.$.fechaFin': futureDate,
+                                            'planes.$.acumulado': nuevoAcumulado,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+
+                                if (nuevoAcumulado >= plan.montoTotal) {
+                                    let acumuladoRestante = nuevoAcumulado - plan.montoTotal;
+                                    await User.findOneAndUpdate(
+                                        { _id: primerReferido._id, 'planes._id': plan._id },
+                                        {
+                                            $set: {
+                                                'planes.$.completo': true,
+                                                'planes.$.acumulado': plan.montoTotal,
+                                            },
+                                        },
+                                        { new: true }
+                                    );
+                                    for (let j = 0; j < primerReferido.planes.length; j++) {
+                                        const plansito = primerReferido.planes[j];
+                                        if (!plansito.completo) {
+                                            let nuevoAcumulado = plansito.acumulado + acumuladoRestante;
+                                            let porcentajeDiario = (4 * plansito.monto) / 100;
+                                            let calculoMontoTotal = plansito.montoTotal - nuevoAcumulado;
+                                            let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
+                                            const futureDate = new Date();
+                                            futureDate.setDate(futureDate.getDate() + calculoDias);
+                                            await User.findOneAndUpdate(
+                                                { _id: primerReferido._id, 'planes._id': plansito._id },
+                                                {
+                                                    $set: {
+                                                        'planes.$.fechaFin': futureDate,
+                                                        'planes.$.acumulado': nuevoAcumulado,
+                                                    },
+                                                },
+                                                { new: true }
+                                            );
+                                        }
+                                    }
+                                }
+
+                                const updateSaldoActualPrimerReferido = await User.findOneAndUpdate(
+                                    { _id: primerReferido._id },
+                                    {
+                                        $set: {
+                                            saldoActual: primerReferido.saldoActual + (10 * plan.monto) / 100,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+
+                                planNoCompletadoEncontrado = true;
+                            }
+                        }
+                    }
+
+                    const segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido });
+
+                    if (segundoReferido) {
+                        let planNoCompletadoEncontrado = false
+                        for (let i = 0; i < segundoReferido.planes.length; i++) {
+                            const planDos = segundoReferido.planes[i];
+                            if (planNoCompletadoEncontrado) break;
+                            if (!planDos.completo) {
+                                let nuevoAcumulado = planDos.acumulado + (5 * plan.monto) / 100;
+                                let porcentajeDiario = (4 * planDos.monto) / 100;
+                                let calculoMontoTotal = planDos.montoTotal - nuevoAcumulado;
+                                let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
+                                const futureDate = new Date();
+                                futureDate.setDate(futureDate.getDate() + calculoDias);
+                                await User.findOneAndUpdate(
+                                    { _id: segundoReferido._id, 'planes._id': planDos._id },
+                                    {
+                                        $set: {
+                                            'planes.$.fechaFin': futureDate,
+                                            'planes.$.acumulado': nuevoAcumulado,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+                                if (nuevoAcumulado >= planDos.montoTotal) {
+                                    let acumuladoRestante = nuevoAcumulado - planDos.montoTotal;
+                                    await User.findOneAndUpdate(
+                                        { _id: segundoReferido._id, 'planes._id': planDos._id },
+                                        {
+                                            $set: {
+                                                'planes.$.completo': true,
+                                                'planes.$.acumulado': planDos.montoTotal,
+                                            },
+                                        },
+                                        { new: true }
+                                    );
+
+                                    for (let j = 0; j < segundoReferido.planes.length; j++) {
+                                        const plansitoDos = segundoReferido.planes[j];
+                                        if (!plansitoDos.completo) {
+                                            let nuevoAcumulado = plansitoDos.acumulado + acumuladoRestante;
+                                            let porcentajeDiario = (4 * plansitoDos.monto) / 100;
+                                            let calculoMontoTotal = plansitoDos.montoTotal - nuevoAcumulado;
+                                            let calculoDias = Math.ceil(calculoMontoTotal / porcentajeDiario);
+                                            const futureDate = new Date();
+                                            futureDate.setDate(futureDate.getDate() + calculoDias);
+                                            await User.findOneAndUpdate(
+                                                { _id: segundoReferido._id, 'planes._id': plansitoDos._id },
+                                                {
+                                                    $set: {
+                                                        'planes.$.fechaFin': futureDate,
+                                                        'planes.$.acumulado': nuevoAcumulado,
+                                                    },
+                                                },
+                                                { new: true }
+                                            );
+                                        }
+                                    }
+                                }
+                                const updateSaldoActualSegundoReferido = await User.findOneAndUpdate(
+                                    { _id: segundoReferido._id },
+                                    {
+                                        $set: {
+                                            saldoActual: segundoReferido.saldoActual + (5 * plan.monto) / 100,
+                                        },
+                                    },
+                                    { new: true }
+                                );
+
+                                planNoCompletadoEncontrado = true;
+                            }
+                        }
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Plan activado con exito',
+                        data: plan
+                    })
+                } else {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No se pudo activar el plan',
+                        data: null
+                    })
+                }
             } else {
-                res.status(404).json({
-                    success: false,
-                    message: 'the user was not found.',
-                })
+                res.status(400).json(
+                    success = false,
+                    message = 'No se encontro el usuario',
+                    data = null
+                )
             }
         } catch (error) {
-            next(error)
+            console.log(error);
         }
     },
-
-    read: async (req, res) => {
-        let query = {};
-        let order = {};
-
-        if (req.query.userId) {
-            query = { userId: req.query.userId };
-        }
-        if (req.query.code) {
-            query = { code: req.query.code };
-        }
-        if (req.query.name) {
-            query = {
-                ...query,
-                name: { $regex: req.query.name, $options: "i" },
-            };
-        }
-        if (req.query.order) {
-            order = {
-                name: req.query.order,
-            };
-        }
-
+    verPlanesSinActivar: async (req, res, next) => {
         try {
-            let all_users = await User.find(query).sort(order);
-            if (all_users) {
-                res.status(200).json({
-                    success: true,
-                    message: "the users were successfully found",
-                    response: all_users,
-                });
+            const { role } = req.user;
+            if (role === 'admin') {
+                const usuarios = await User.find({ 'planes.estado': 'pendiente' });
+
+                let planesSinActivar = [];
+
+                for (const usuario of usuarios) {
+                    for (const plan of usuario.planes) {
+                        if (plan.estado === 'pendiente') {
+                            planesSinActivar.push(plan)
+                        }
+                    }
+                }
+
+                if (planesSinActivar.length > 0) {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Planes encontrados',
+                        response: planesSinActivar
+                    });
+                } else {
+                    return res.status(200).json({
+                        success: false,
+                        message: 'No se encontraron planes',
+                        response: null
+                    });
+                }
             } else {
-                res.status(404).json({
+                return res.status(200).json({
                     success: false,
-                    message: "there are no users",
+                    message: 'No tienes permisos para realizar esta acción',
+                    response: null
                 });
             }
         } catch (error) {
-            res.status(400).json({
+            console.log(error);
+            return res.status(500).json({
                 success: false,
-                message: error.message,
+                message: 'Error en el servidor',
+                response: null
             });
         }
     },
-    
-    update: async (req, res, next) => {
-        let id = req.params.id;
-        if (req.body.password) {
-            let { password } = req.body;
-            password = bcryptjs.hashSync(password, 10);
-            req.body.password = password;
-        }
-
-
+    verMisActivaciones: async (req, res, next) => {
         try {
-            let user = await User.findOneAndUpdate({ _id: id }, req.body, { new: true });
+            const { id, role } = req.user;
+            if (role === 'admin') {
+                const usuarios = await User.find({ 'planes.idAdmin': id });
+                let planesActivados = [];
+                if (usuarios) {
+                    for (const usuario of usuarios) {
+                        for (const plan of usuario.planes) {
+                            if (plan.idAdmin.equals(id)) {
+                                planesActivados.push(plan)
+                            }
+                        }
+                    }
 
-            if (user) {
-                res.status(200).json({
-                    success: true,
-                    message: "The user was successfully modified!",
-                    data: user,
-                });
+                    if (planesActivados.length > 0) {
+                        return res.status(200).json({
+                            success: true,
+                            message: 'Planes encontrados',
+                            response: planesActivados
+                        });
+                    } else {
+                        return res.status(200).json({
+                            success: false,
+                            message: 'No se encontraron planes',
+                            response: null
+                        });
+                    }
+                } else {
+                    return res.status(200).json({
+                        success: false,
+                        message: 'No se encontraron planes',
+                        response: null
+                    });
+                }
+
             } else {
-                res.status(404).json({
+                return res.status(200).json({
                     success: false,
-                    message: "The user was not found",
+                    message: 'No tienes permisos para realizar esta acción',
+                    response: null
                 });
             }
         } catch (error) {
-            next(error)
+            console.log(error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error en el servidor',
+                response: null
+            });
         }
     },
 
