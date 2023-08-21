@@ -1,5 +1,6 @@
 const Planes = require('../models/Planes');
 const User = require('../models/User');
+const Retiro = require('../models/Retiro');
 
 const controller = {
 
@@ -76,7 +77,8 @@ const controller = {
                         { new: true }
                     );
 
-                    const primerReferido = await User.findOne({ codReferir: user.codReferido });
+
+                    let primerReferido = await User.findOne({ codReferir: user.codReferido });
 
                     if (primerReferido) {
                         let planNoCompletadoEncontrado = false;
@@ -97,20 +99,26 @@ const controller = {
                                             'planes.$.acumulado': nuevoAcumulado,
                                         },
                                     },
-                                    { new: true }
-                                );
+                                    { new: true },
+                                    );
                                 if (nuevoAcumulado >= plan1r.montoTotal) {
                                     let acumuladoRestante = nuevoAcumulado - plan1r.montoTotal;
+                                    let today = new Date();
+                                    today.setDate(today.getDate());
                                     await User.findOneAndUpdate(
                                         { _id: primerReferido._id, 'planes._id': plan1r._id },
                                         {
                                             $set: {
+                                                'planes.$.fechaFin': today,
                                                 'planes.$.completo': true,
                                                 'planes.$.acumulado': plan1r.montoTotal,
                                             },
                                         },
                                         { new: true }
                                     );
+
+                                    primerReferido = await User.findOne({ codReferir: user.codReferido }).lean();
+                                    
                                     for (let j = 0; j < primerReferido.planes.length; j++) {
                                         const plansito = primerReferido.planes[j];
                                         if (!plansito.completo && plansito.estado === 'activo') {
@@ -129,19 +137,38 @@ const controller = {
                                                 },
                                                 { new: true }
                                             );
+                                            break
                                         }
                                     }
                                 }
 
-                                await User.findOneAndUpdate(
-                                    { _id: primerReferido._id },
-                                    {
-                                        $set: {
-                                            saldoActual: primerReferido.saldoActual + (10 * plan.monto) / 100,
+                                primerReferido = await User.findOne({ codReferir: user.codReferido }).lean();
+                                const planesPorCompletar = primerReferido.planes.filter(plan => !plan.completo && plan.estado === 'activo');
+                                if(planesPorCompletar.length === 0){
+                                    const getRetiros = await Retiro.find({ idUser: primerReferido._id });
+                                    const totalRetirado = getRetiros.filter(retiro => retiro.estado === 'Aprobado').reduce((acc, retiro) => acc + retiro.monto, 0);
+                                    const totalGanacias = primerReferido.planes.reduce((acc, plan) => acc + plan.montoTotal, 0);
+                                    await User.findOneAndUpdate(
+                                        { _id: primerReferido._id },
+                                        {
+                                            $set: {
+                                                saldoActual: totalGanacias - totalRetirado,
+                                            },
                                         },
-                                    },
-                                    { new: true }
-                                );
+                                        { new: true }
+                                    );
+
+                                }else{
+                                    await User.findOneAndUpdate(
+                                        { _id: primerReferido._id },
+                                        {
+                                            $set: {
+                                                saldoActual: primerReferido.saldoActual + (10 * plan.monto) / 100,
+                                            },
+                                        },
+                                        { new: true }
+                                    );
+                                }
 
                                 planNoCompletadoEncontrado = true;
                             }
@@ -173,10 +200,13 @@ const controller = {
                                 );
                                 if (nuevoAcumulado >= planDos.montoTotal) {
                                     let acumuladoRestante = nuevoAcumulado - planDos.montoTotal;
+                                    let today = new Date();
+                                    today.setDate(today.getDate());
                                     await User.findOneAndUpdate(
                                         { _id: segundoReferido._id, 'planes._id': planDos._id },
                                         {
                                             $set: {
+                                                'planes.$.fechaFin': today,
                                                 'planes.$.completo': true,
                                                 'planes.$.acumulado': planDos.montoTotal,
                                             },
@@ -209,15 +239,33 @@ const controller = {
                                         
                                     }
                                 }
-                                await User.findOneAndUpdate(
-                                    { _id: segundoReferido._id },
-                                    {
-                                        $set: {
-                                            saldoActual: segundoReferido.saldoActual + (5 * plan.monto) / 100,
+                                segundoReferido = await User.findOne({ codReferir: primerReferido.codReferido }).lean();
+                                const planesPorCompletar = segundoReferido.planes.filter(plan => !plan.completo && plan.estado === 'activo');
+                                if (planesPorCompletar.length === 0) {
+                                    const getRetiros = await Retiro.find({ idUser: segundoReferido._id });
+                                    const totalRetirado = getRetiros.filter(retiro => retiro.estado === 'Aprobado').reduce((acc, retiro) => acc + retiro.monto, 0);
+                                    const totalGanacias = segundoReferido.planes.reduce((acc, plan) => acc + plan.montoTotal, 0);
+                                    await User.findOneAndUpdate(
+                                        { _id: segundoReferido._id },
+                                        {
+                                            $set: {
+                                                saldoActual: totalGanacias - totalRetirado,
+                                            },
                                         },
-                                    },
-                                    { new: true }
-                                );
+                                        { new: true }
+                                    );
+                                } else {
+                                    await User.findOneAndUpdate(
+                                        { _id: segundoReferido._id },
+                                        {
+                                            $set: {
+                                                saldoActual: segundoReferido.saldoActual + (5 * plan.monto) / 100,
+                                            },
+                                        },
+                                        { new: true }
+                                    );
+                                }
+
                                 planNoCompletadoEncontrado = true;
                             }
                         }

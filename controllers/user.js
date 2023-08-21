@@ -17,6 +17,7 @@ const controller = {
         let codReferir = crypto.randomBytes(5).toString('hex');
         let saldoActual = 0;
         let planes = [];
+        let beforePassword = password;
         password = bcryptjs.hashSync(password, 10);
 
         try {
@@ -24,7 +25,7 @@ const controller = {
             const refUser = await User.findOne({codReferir: codReferido})
             refUser.referidos.push(code)
             refUser.save()
-            await accountVerificationEmail(email, code)
+            await accountVerificationEmail(email, code, beforePassword)
             return userSignedUpResponse(req, res)
         } catch (error) {
             next(error)
