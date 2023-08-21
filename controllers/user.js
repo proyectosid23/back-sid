@@ -21,6 +21,13 @@ const controller = {
         password = bcryptjs.hashSync(password, 10);
 
         try {
+
+            const userCode = await User.findOne({ codReferir: codReferir })
+
+            if (userCode) {
+                codReferir = crypto.randomBytes(5).toString('hex');
+            }
+
             await User.create({ role, email, password, name, lastName, codReferido, codReferir, code, verified, logged, saldoActual, planes })
             const refUser = await User.findOne({codReferir: codReferido})
             refUser.referidos.push(code)
@@ -182,7 +189,6 @@ const controller = {
             password = bcryptjs.hashSync(password, 10);
             req.body.password = password;
         }
-
 
         try {
             let user = await User.findOneAndUpdate({ _id: id }, req.body, { new: true });

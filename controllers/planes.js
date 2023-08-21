@@ -87,7 +87,7 @@ const controller = {
                             if (planNoCompletadoEncontrado) break;
                             if (!plan1r.completo && plan1r.estado === 'activo') {
                                 let nuevoAcumulado = plan1r.acumulado + (10 * plan.monto) / 100;
-                                let calculoMontoTotal = plan.montoTotal - nuevoAcumulado;
+                                let calculoMontoTotal = plan1r.montoTotal - nuevoAcumulado;
                                 let calculoDias = Math.ceil(calculoMontoTotal / plan1r.porcentajeDiario);
                                 const futureDate = new Date();
                                 futureDate.setDate(futureDate.getDate() + calculoDias);
