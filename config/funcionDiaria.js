@@ -82,13 +82,10 @@ const funcionDiaria = async () => {
             }
                 userNuevo = await User.findOne({ _id: user._id }).lean();
                 const planesPorCompletar = userNuevo.planes.filter(plan => plan.completo === false && plan.estado === 'activo');
-                console.log('planes por completar', planesPorCompletar.length)
                 if (planesPorCompletar.length === 0) {
-                    console.log('entro al if de planes por completar')
                     const getRetiros = await Retiro.find({ idUser: userNuevo._id });
                     const totalRetirado = getRetiros.filter(retiro => retiro.estado === 'Aprobado').reduce((acc, retiro) => acc + retiro.monto, 0);
                     const totalGanancias = userNuevo.planes.reduce((acc, plan) => acc + plan.acumulado, 0);
-                    console.log('total ganancias', totalGanancias, 'total retirado', totalRetirado)
                     await User.findOneAndUpdate(
                         { _id: userNuevo._id },
                         {
@@ -98,7 +95,6 @@ const funcionDiaria = async () => {
                         },
                         { new: true }
                     );
-                    console.log('se actualizó el saldo actual restando el total retirado al total ganado', 'totalGanacias', totalGanancias, '-', 'totalRetirado', totalRetirado, '=', totalGanancias - totalRetirado)
                 } else { 
                     await User.findOneAndUpdate(
                         { _id: user._id },
@@ -109,7 +105,6 @@ const funcionDiaria = async () => {
                         },
                         { new: true }
                     );
-                    console.log('se actualizó el saldo actual sumando el porcentaje diario de los planes activos de este usuario', 'saldoActual', nuevoSaldoActual)
                 }
         }
     } catch (error) {
