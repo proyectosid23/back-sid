@@ -189,7 +189,6 @@ const controller = {
                                     for (let j = 0; j < segundoReferido.planes.length; j++) {
                                         const plansitoDos = segundoReferido.planes[j];
                                         if (!plansitoDos.completo && plansitoDos.estado === 'activo') {
-                                            console.log(plansitoDos)
                                             let nuevoAcumuladoo = plansitoDos.acumulado + acumuladoRestante;
                                             let calculoMontoTotall = plansitoDos.montoTotal - nuevoAcumulado;
                                             let calculoDiass = Math.ceil(calculoMontoTotall / plansitoDos.porcentajeDiario);
