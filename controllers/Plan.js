@@ -66,7 +66,8 @@ const controller = {
 
     update: async (req, res) => {
         const { id, role } = req.user
-        const {plan, direccion} = req.body
+        const { direccion, red} = req.body
+        const {idPlan} = req.params
 
         if (role !== "admin") {
             return res.status(200).json({
@@ -78,12 +79,11 @@ const controller = {
 
         try {
 
-            const planAModificar = await Plan.findOneAndUpdate( {"plan.ganancia25dias": plan} , {
-                direccion: direccion,
-                userModificate: id,
-            },
-            { new: true }
-            )
+            const planAModificar = await Plan.findByIdAndUpdate(idPlan, {
+                direccion,
+                red,
+                userModificate: id
+            }, { new: true })
 
             return res.status(200).json({
                 success: true,
