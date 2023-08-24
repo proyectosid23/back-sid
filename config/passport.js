@@ -22,6 +22,8 @@ passport.use(
                         password: user.password,
                         role: user.role,
                         saldoActual: user.saldoActual,
+                        planes: user.planes.length,
+                        referidos: user.referidos,
                     }
                     return done(null, user)
                 } else {
