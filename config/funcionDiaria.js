@@ -3,7 +3,8 @@ const User = require('../models/User');
 const Retiro = require('../models/Retiro');
 
 const funcionDiaria = async () => {
-
+    let today = new Date();
+    console.log('entró a la función diaria')
     try {
 
         const users = await User.find();
@@ -111,7 +112,7 @@ const funcionDiaria = async () => {
         console.log(error);
     }
 
-    console.log('Se ejecutó la función diaria');
+    console.log('Se ejecutó la función diaria', today.getHours(), ':', today.getMinutes(), ':', today.getSeconds(),) ;
 };
 
 cron.schedule('0 0 * * *', funcionDiaria);

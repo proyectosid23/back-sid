@@ -21,13 +21,7 @@ passport.use(
                         email: user.email,
                         password: user.password,
                         role: user.role,
-                        verified: user.verified,
-                        planes: user.planes,
                         saldoActual: user.saldoActual,
-                        logged: user.logged,
-                        codReferir: user.codReferir,
-                        codReferido: user.codReferido,
-                        referidos: user.referidos,
                     }
                     return done(null, user)
                 } else {

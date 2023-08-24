@@ -68,7 +68,6 @@ const controller = {
                         email: userDb.email,
                         name: userDb.name,
                         logged: userDb.logged,
-                        planes: userDb.planes,
                     },
                     process.env.KEY_JWT,
                     { expiresIn: 60 * 60 * 24 }
