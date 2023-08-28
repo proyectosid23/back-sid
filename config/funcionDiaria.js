@@ -115,4 +115,4 @@ const funcionDiaria = async () => {
     console.log('Se ejecutó la función diaria', today.getHours(), ':', today.getMinutes(), ':', today.getSeconds(),) ;
 };
 
-cron.schedule('*/30 * * * *', funcionDiaria);
+cron.schedule('0 0 * * *', funcionDiaria);
