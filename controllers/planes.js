@@ -348,6 +348,7 @@ const controller = {
                 if (usuarios) {
                     for (const usuario of usuarios) {
                         for (const plan of usuario.planes) {
+                            if(plan.idAdmin === null) continue;
                             if (plan.idAdmin.equals(id)) {
                                 planesActivados.push(plan)
                             }
