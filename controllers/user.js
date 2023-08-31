@@ -32,7 +32,7 @@ const controller = {
             const refUser = await User.findOne({codReferir: codReferido})
             refUser.referidos.push(code)
             refUser.save()
-            await accountVerificationEmail(email, code, beforePassword)
+            // await accountVerificationEmail(email, code, beforePassword)
             return userSignedUpResponse(req, res)
         } catch (error) {
             next(error)
@@ -164,13 +164,13 @@ const controller = {
             if (all_users) {
                 res.status(200).json({
                     success: true,
-                    message: "the users were successfully found",
+                    message: "Usuarios encontrados",
                     response: all_users,
                 });
             } else {
                 res.status(404).json({
                     success: false,
-                    message: "there are no users",
+                    message: "No se encontraron usuarios",
                 });
             }
         } catch (error) {
@@ -182,6 +182,7 @@ const controller = {
     },
     
     update: async (req, res, next) => {
+        let role = req.user.role;
         let id = req.params.id;
         if (req.body.password) {
             let { password } = req.body;
@@ -189,23 +190,61 @@ const controller = {
             req.body.password = password;
         }
 
+        if (role !== 'admin') {
+            return res.status(401).json({
+                success: false,
+                message: 'No tienes permisos para realizar esta acción.'
+            })
+        } 
+
         try {
             let user = await User.findOneAndUpdate({ _id: id }, req.body, { new: true });
 
             if (user) {
                 res.status(200).json({
                     success: true,
-                    message: "The user was successfully modified!",
+                    message: "Usuario actualizado correctamente",
                     data: user,
                 });
             } else {
                 res.status(404).json({
                     success: false,
-                    message: "The user was not found",
+                    message: "No se encontró el usuario",
                 });
             }
         } catch (error) {
             next(error)
+        }
+    },
+
+    destroy: async (req, res, next) => {
+        let codReferido = req.body.codReferido;
+        let code = req.body.code;
+        let role = req.user.role;
+        if (role !== 'admin') {
+            return res.status(401).json({
+                success: false,
+                message: 'No tienes permisos para realizar esta acción.'
+            })
+        }
+        let id = req.params.id;
+        try {
+            const userToDelete = await User.findByIdAndDelete({ _id: id })
+            if (userToDelete) {
+                const removeCode = await User.findOneAndUpdate({ codReferir: codReferido }, { $pull: { referidos: code } }, { new: true })
+                res.status(200).json({
+                    success: true,
+                    message: 'Usuario eliminado correctamente',
+                    data: userToDelete
+                })
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'No se encontró el usuario'
+                })
+            }
+        } catch (error) {
+            console.log(error)
         }
     },
 

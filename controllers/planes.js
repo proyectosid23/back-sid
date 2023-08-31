@@ -440,6 +440,235 @@ const controller = {
         }
     },
 
+    infoTotal: async (req, res, next) => {
+
+        const { role } = req.user;
+        const { fecha } = req.body;
+
+        let planesVendidosTotales = 0;
+        let planesVendidosTotalesInfo = [];
+        let planesActivosTotales = 0;
+        let planesActivosTotalesInfo = [];
+        let planesCompletadosTotales = 0;
+        let planesCompletadosTotalesInfo = [];
+        let planesRechazadosTotales = 0;
+        let planesRechazadosTotalesInfo = [];
+        let planesPendientesTotales = 0;
+        let planesPendientesTotalesInfo = [];
+        let retirosPendientes = 0;
+        let retirosPendientesInfo = [];
+        let retirosTotales = 0;
+        let retirosTotalesInfo = [];
+        let gananciasTotales = 0;
+        let abonosTotales = 0;
+        let planesVendidosHoy = 0;
+        let planesVendidosHoyInfo = [];
+        let planesActivosHoy = 0;
+        let planesActivosHoyInfo = [];
+        let planesCompletadosHoy = 0;
+        let planesCompletadosHoyInfo = [];
+        let planesRechazadosHoy = 0;
+        let planesRechazadosHoyInfo = [];
+        let planesPendientesHoy = 0;
+        let planesPendientesHoyInfo = [];
+        let retirosPendientesHoy = 0;
+        let retirosPendientesHoyInfo = [];
+        let retirosTotalesHoy = 0;
+        let retirosTotalesHoyInfo = [];
+        let gananciasHoy = 0;
+        let abonosHoy = 0;
+
+        if (role === 'admin') {
+            try{
+
+                //Se Obtienen los usuarios y se llena la informacion de los planes y se calculan las ganancias totales
+                const usuarios = await User.find({});
+
+                for (const usuario of usuarios) {
+                    if (usuario.planes.length > 0){
+                        for (const plan of usuario.planes) {
+                            
+                            const diaFechaPlan = plan.fechaInicio.getDate();
+                            const mesFechaPlan = plan.fechaInicio.getMonth() + 1;
+                            const anioFechaPlan = plan.fechaInicio.getFullYear();
+                            const fechaPlan = `${diaFechaPlan}/${mesFechaPlan}/${anioFechaPlan}`;
+
+                            if (plan.estado === 'activo' && !plan.completo ) {
+                                planesActivosTotales += 1;
+                                planesActivosTotalesInfo.push(plan);
+                                gananciasTotales += plan.monto;    
+                                
+                                //Se obtienen la fecha del plan y la fecha de hoy para comparar si el plan se activo hoy
+                                if(fechaPlan === fecha){
+                                    planesActivosHoy += 1;
+                                    planesActivosHoyInfo.push(plan);
+                                    gananciasHoy += plan.monto;
+                                    planesVendidosHoy += 1;
+                                    planesVendidosHoyInfo.push(plan);
+                                }
+
+                                planesVendidosTotalesInfo.push(plan);
+                                planesVendidosTotales += 1;
+
+                            } else if (plan.estado === 'rechazado' && !plan.completo) {
+                                planesRechazadosTotales += 1;
+                                planesRechazadosTotalesInfo.push(plan);
+
+                                //Se obtienen la fecha del plan y la fecha de hoy para comparar si el plan se rechazo hoy
+                                if(fechaPlan === fecha){
+                                    planesRechazadosHoy += 1;
+                                    planesRechazadosHoyInfo.push(plan);
+                                }
+                            } else if (plan.estado === 'pendiente' && !plan.completo) {
+                                planesPendientesTotales += 1;
+                                planesPendientesTotalesInfo.push(plan);
+
+                                //Se obtienen la fecha del plan y la fecha de hoy para comparar si el plan se vendio hoy
+                                if(fechaPlan === fecha){
+                                    planesPendientesHoy += 1;
+                                    planesPendientesHoyInfo.push(plan);
+                                }
+
+                            } else if(plan.completo){
+                                planesCompletadosTotales += 1;
+                                gananciasTotales += plan.monto;
+                                planesCompletadosTotalesInfo.push(plan);
+
+                                //Se obtienen la fecha del plan y la fecha de hoy para comparar si el plan se completo hoy
+                                if(fechaPlan === fecha){
+                                    planesCompletadosHoy += 1;
+                                    planesCompletadosHoyInfo.push(plan);
+                                    gananciasHoy += plan.monto;
+                                    planesVendidosHoy += 1;
+                                    planesVendidosHoyInfo.push(plan);
+                                }
+
+                                planesVendidosTotalesInfo.push(plan);
+                                planesVendidosTotales += 1;
+                            }
+                        }
+                    }
+                }
+
+                //Se obtienen los retiros y se llena la informacion de los retiros y se calculas los abonos totales
+
+                const retiros = await Retiro.find({});
+                for (const retiro of retiros) {
+                    let diaFechaRetiro = retiro.fecha.getDate();
+                    let mesFechaRetiro = retiro.fecha.getMonth() + 1;
+                    let anioFechaRetiro = retiro.fecha.getFullYear();
+                    let fechaRetiro = `${diaFechaRetiro}/${mesFechaRetiro}/${anioFechaRetiro}`;
+
+                    if (retiro.estado === 'Pendiente') {
+                        retirosPendientes += 1;
+                        retirosPendientesInfo.push(retiro);
+
+                        //Se obtienen la fecha del retiro y la fecha de hoy para comparar si el retiro se hizo hoy
+                        if(fechaRetiro === fecha){
+                            retirosPendientesHoy += 1;
+                            retirosPendientesHoyInfo.push(retiro);
+                        }
+
+                    } else if (retiro.estado === 'Aprobado') {
+                        retirosTotales += 1;
+                        retirosTotalesInfo.push(retiro);
+                        abonosTotales += retiro.monto;
+
+                        //Se obtienen la fecha del retiro y la fecha de hoy para comparar si el retiro se hizo hoy
+                        if(fechaRetiro === fecha){
+                            retirosTotalesHoy += 1;
+                            retirosTotalesHoyInfo.push(retiro);
+                            abonosHoy += retiro.monto;
+                        }
+                    }
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Informacion obtenida con exito',
+                    response: {
+                        informacionTotal: {
+                            planesVendidosTotales: {
+                                cantidad: planesVendidosTotales,
+                                info: planesVendidosTotalesInfo
+                            },
+                            planesActivosTotales: {
+                                cantidad: planesActivosTotales,
+                                info: planesActivosTotalesInfo
+                            },
+                            planesCompletadosTotales: {
+                                cantidad: planesCompletadosTotales,
+                                info: planesCompletadosTotalesInfo
+                            },
+                            planesRechazadosTotales: {
+                                cantidad: planesRechazadosTotales,
+                                info: planesRechazadosTotalesInfo
+                            },
+                            planesPendientesTotales: {
+                                cantidad: planesPendientesTotales,
+                                info: planesPendientesTotalesInfo
+                            },
+                            retirosPendientes: {
+                                cantidad: retirosPendientes,
+                                info: retirosPendientesInfo
+                            },
+                            retirosTotales: {
+                                cantidad: retirosTotales,
+                                info: retirosTotalesInfo
+                            },
+                            gananciasTotales: gananciasTotales,
+                            abonosTotales: abonosTotales,
+
+                        },
+                        informacionHoy: {
+                            planesVendidosHoy: {
+                                cantidad: planesVendidosHoy,
+                                info: planesVendidosHoyInfo
+                            },
+                            planesActivosHoy: {
+                                cantidad: planesActivosHoy,
+                                info: planesActivosHoyInfo
+                            },
+                            planesCompletadosHoy: {
+                                cantidad: planesCompletadosHoy,
+                                info: planesCompletadosHoyInfo
+                            },
+                            planesRechazadosHoy: {
+                                cantidad: planesRechazadosHoy,
+                                info: planesRechazadosHoyInfo
+                            },
+                            planesPendientesHoy: {
+                                cantidad: planesPendientesHoy,
+                                info: planesPendientesHoyInfo
+                            },
+                            retirosPendientesHoy: {
+                                cantidad: retirosPendientesHoy,
+                                info: retirosPendientesHoyInfo
+                            },
+                            retirosTotalesHoy: {
+                                cantidad: retirosTotalesHoy,
+                                info: retirosTotalesHoyInfo
+                            },
+                            gananciasHoy: gananciasHoy,
+                            abonosHoy: abonosHoy,
+                        },
+                    }
+                });
+
+                
+            } catch (error) {
+                console.log(error);
+            }
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: 'No tienes permisos para realizar esta acción',
+                response: null
+            });
+        }
+
+    }
+
 }
 
 module.exports = controller;
