@@ -19,6 +19,7 @@ const schema = new mongoose.Schema({
     },
     idAdmin: { type: mongoose.Types.ObjectId, ref: 'users', required: false },
     completo: { type: Boolean, required: true },
+    fantasma: { type: Boolean, required: true },
 });
 
 const Planes = mongoose.model('planes', schema);

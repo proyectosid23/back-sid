@@ -8,6 +8,6 @@ router.post('/activar/:idPlan', passport.authenticate('jwt', { session: false })
 router.post('/rechazar/:idPlan', passport.authenticate('jwt', { session: false }), rechazarPlan)
 router.get('/verPlanesSinActivar', passport.authenticate('jwt', { session: false }), verPlanesSinActivar)
 router.get('/verMisActivaciones', passport.authenticate('jwt', { session: false }), verMisActivaciones)
-router.get('/infoTotal', passport.authenticate('jwt', { session: false }), infoTotal)
+router.post('/infoTotal', passport.authenticate('jwt', { session: false }), infoTotal)
 
 module.exports = router;    

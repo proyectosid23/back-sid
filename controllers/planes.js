@@ -32,6 +32,7 @@ const controller = {
                 },
                 idAdmin: null,
                 completo: false,
+                fantasma: false,
             });
 
             const user = await User.findById(id);
@@ -487,6 +488,8 @@ const controller = {
                 for (const usuario of usuarios) {
                     if (usuario.planes.length > 0){
                         for (const plan of usuario.planes) {
+
+                            if(plan.fantasma) continue;
                             
                             const diaFechaPlan = plan.fechaInicio.getDate();
                             const mesFechaPlan = plan.fechaInicio.getMonth() + 1;
