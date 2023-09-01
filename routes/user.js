@@ -14,7 +14,7 @@ const { register, verify, login, loginWithToken, logout, readOne, update, read, 
 router.post('/sign-up',validator(schema), accountExistsSignUp, codReferidoNotValidMid, register);
 router.post('/sign-in', validator(schemaSignin), accountExistsSignIn, accountHasBeenVerified, accountIsAlredyLogged, login)
 router.post('/sign-out', passport.authenticate('jwt', { session: false }), logout)
-router.get('/', passport.authenticate('jwt', { session: false }), read )
+router.get('/', read )
 router.delete('/:id', passport.authenticate('jwt', { session: false }), destroy)
 
 router.get('/verify/:code', verify);
