@@ -32,7 +32,7 @@ const controller = {
             const refUser = await User.findOne({codReferir: codReferido})
             refUser.referidos.push(code)
             refUser.save()
-            // await accountVerificationEmail(email, code, beforePassword)
+            await accountVerificationEmail(email, code, beforePassword)
             return userSignedUpResponse(req, res)
         } catch (error) {
             next(error)
@@ -45,7 +45,7 @@ const controller = {
         try {
             let user = await User.findOneAndUpdate({ code: code }, { verified: true }, { new: true })
             if (user) {
-                return res.redirect('https://www.google.com')
+                return res.redirect('https://i.ibb.co/zn61p65/verificacion.png')
             }
             return userNotFoundResponse(req, res)
 
