@@ -12,7 +12,7 @@ const mustSignIn = require('../middlewares/mustSignIn')
 const { register, verify, login, loginWithToken, logout, readOne, update, read, destroy } = require('../controllers/user');
 
 router.post('/sign-up',validator(schema), accountExistsSignUp, codReferidoNotValidMid, register);
-router.post('/sign-in', validator(schemaSignin), accountExistsSignIn, accountHasBeenVerified, accountIsAlredyLogged, login)
+router.post('/sign-in', validator(schemaSignin), accountExistsSignIn, accountHasBeenVerified, login)
 router.post('/sign-out', passport.authenticate('jwt', { session: false }), logout)
 router.get('/', read )
 router.delete('/:id', passport.authenticate('jwt', { session: false }), destroy)
