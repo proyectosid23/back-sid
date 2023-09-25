@@ -34,6 +34,7 @@ const controller = {
                 fechaRechazo: null,
                 fotoComprobante: null,
                 idAdmin: null,
+                fantasma: false,
             });
 
             return res.status(200).json({

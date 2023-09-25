@@ -11,6 +11,7 @@ const schema = new mongoose.Schema({
     fechaRechazo: {type: Date, required: false},
     fotoComprobante: {type: String, required: false},
     idAdmin: {type: mongoose.Types.ObjectId, ref: 'users', required: false},
+    fantasma: {type: Boolean, required: false},
 });
 
 const Retiro = mongoose.model('retiros', schema);

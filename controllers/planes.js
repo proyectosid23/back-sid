@@ -557,6 +557,8 @@ const controller = {
 
                 const retiros = await Retiro.find({});
                 for (const retiro of retiros) {
+                    if(retiro.fantasma) continue;
+                    
                     let diaFechaRetiro = retiro.fecha.getDate();
                     let mesFechaRetiro = retiro.fecha.getMonth() + 1;
                     let anioFechaRetiro = retiro.fecha.getFullYear();
