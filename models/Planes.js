@@ -7,6 +7,7 @@ const schema = new mongoose.Schema({
     fechaInicio: { type: Date, required: true },
     fechaFin: { type: Date, required: true },
     TxId: { type: String, required: true },
+    banColombia: { type: Boolean, required: true, default: false },
     monto: { type: Number, required: true },
     montoTotal: { type: Number, required: true },
     porcentajeDiario: { type: Number, required: true },

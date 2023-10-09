@@ -9,6 +9,9 @@ const schema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    direccionBanColombia: {
+        type: Number,
+    },
     red: {
         type: String,
         required: true,
@@ -38,6 +41,9 @@ const schema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    valorPC: {
+        type: Number,
+    }
 });
 
 

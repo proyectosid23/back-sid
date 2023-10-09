@@ -15,17 +15,19 @@ const controller = {
         }
 
         try {
-            const { name, direccion, red, gananciaDiaria, ganancia25dias, ganancia50dias, ganancia75dias, gananciaTotal } = req.body
+            const { name, direccion, direccionBanColombia, red, gananciaDiaria, ganancia25dias, ganancia50dias, ganancia75dias, gananciaTotal, valorPC } = req.body
             const newPlan = await Plan.create({
                 name,
                 red,
                 direccion,
+                direccionBanColombia,
                 userModificate: id,
                 gananciaDiaria,
                 ganancia25dias,
                 ganancia50dias,
                 ganancia75dias,
-                gananciaTotal
+                gananciaTotal,
+                valorPC,
             })
 
             return res.status(200).json({
@@ -66,8 +68,8 @@ const controller = {
 
     update: async (req, res) => {
         const { id, role } = req.user
-        const { direccion, red} = req.body
-        const {idPlan} = req.params
+        const { direccion, red, direccionBanColombia, valorPC } = req.body
+        const { idPlan } = req.params
 
         if (role !== "admin") {
             return res.status(200).json({
@@ -79,16 +81,24 @@ const controller = {
 
         try {
 
-            const planAModificar = await Plan.findByIdAndUpdate(idPlan, {
+            const modifiedPlan = await Plan.findByIdAndUpdate(idPlan, {
                 direccion,
                 red,
-                userModificate: id
-            }, { new: true })
+                userModificate: id,
+                direccionBanColombia,
+                valorPC
+            }, {new: true})
 
-            return res.status(200).json({
-                success: true,
-                response: planAModificar,
-                message: "Plan actualizado exitosamente"
+            if (modifiedPlan){
+                return res.status(200).json({
+                    success: true,
+                    response: modifiedPlan,
+                    message: "Plan actualizado exitosamente"
+                    })
+            } 
+            return res.status(400).json({
+                success: false,
+                message: "Error al modificar el plan"
             })
 
         } catch (error) {

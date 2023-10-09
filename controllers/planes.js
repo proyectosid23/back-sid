@@ -6,7 +6,7 @@ const controller = {
 
     buy: async (req, res, next) => {
         try {
-            const { plan, image, TxId } = req.body;
+            const { plan, image, TxId, isBanColombia } = req.body;
             const { id, name, lastName, email } = req.user;
             const fechaInicio = new Date();
             const fechaFin = new Date();
@@ -17,6 +17,7 @@ const controller = {
                 plan: plan.name,
                 estado,
                 TxId,
+                banColombia: isBanColombia ? isBanColombia : false,
                 capturaDePago: image,
                 fechaInicio,
                 fechaFin,
